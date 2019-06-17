@@ -171,7 +171,10 @@ def shutdown():
     rospy.loginfo("Thread monitor finished.")
     for name, port in ports.items():
         port.finish.set()
-        port.join()
+        try :
+            port.join()
+        except Exception, e:
+            rospy.loginfo(e)
         rospy.loginfo("Port %s thread finished." % name)
     for sock in socks:
         sock.shutdown(socket.SHUT_RDWR)
