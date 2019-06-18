@@ -72,7 +72,7 @@ class DataPort(Port):
                 if header.id not in bad_pkts:
                     rospy.logwarn("Error parsing %s.%d" % header.id)
                     bad_pkts.add(pkt)
-
+            print("processed message {}".format(header.id))        
             if header.id not in pkt_counters:
                 pkt_counters[header.id] = 0
             else:
