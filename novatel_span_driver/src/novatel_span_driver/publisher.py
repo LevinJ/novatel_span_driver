@@ -91,6 +91,7 @@ class NovatelPublisher(object):
         self.pub_odom = rospy.Publisher('navsat/odom', Odometry, queue_size=1)
         self.pub_origin = rospy.Publisher('navsat/origin', Pose, queue_size=1, latch=True)
         self.pub_navsatfix = rospy.Publisher('navsat/fix', NavSatFix, queue_size=1)
+        self.pub_navsatfix_nonspan = rospy.Publisher('navsat/fix_nonspan', NavSatFix, queue_size=1)
 
         if self.publish_tf:
             self.tf_broadcast = tf.TransformBroadcaster()
@@ -102,11 +103,18 @@ class NovatelPublisher(object):
 
         # Subscribed topics
         rospy.Subscriber('novatel_data/bestpos', BESTPOS, self.bestpos_handler)
+        rospy.Subscriber('novatel_data/bestgnsspos', BESTPOS, self.bestgnsspos_handler)
         rospy.Subscriber('novatel_data/corrimudata', CORRIMUDATA, self.corrimudata_handler)
         rospy.Subscriber('novatel_data/inscov', INSCOV, self.inscov_handler)
         rospy.Subscriber('novatel_data/inspvax', INSPVAX, self.inspvax_handler)
-
-    def bestpos_handler(self, bestpos):
+    
+    def bestgnsspos_handler(self, bestpos):
+        navsat = self.process_bestpos(bestpos)
+        # Ship ito
+        self.pub_navsatfix_nonspan.publish(navsat)
+        return
+    
+    def process_bestpos(self, bestpos):
         navsat = NavSatFix()
 
         # TODO: The timestamp here should come from SPAN, not the ROS system time.
@@ -164,9 +172,15 @@ class NovatelPublisher(object):
         navsat.position_covariance[4] = pow(2, bestpos.longitude_std)
         navsat.position_covariance[8] = pow(2, bestpos.altitude_std)
         navsat.position_covariance_type = NavSatFix.COVARIANCE_TYPE_DIAGONAL_KNOWN
+        
+        return navsat
 
+    def bestpos_handler(self, bestpos):
+              
+        navsat = self.process_bestpos(bestpos)
         # Ship ito
         self.pub_navsatfix.publish(navsat)
+        return
 
     def inspvax_handler(self, inspvax):
         # Convert the latlong to x,y coordinates and publish an Odometry
