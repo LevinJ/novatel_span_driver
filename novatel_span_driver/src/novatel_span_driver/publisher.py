@@ -110,17 +110,7 @@ class NovatelPublisher(object):
         rospy.Subscriber('novatel_data/inscov', INSCOV, self.inscov_handler)
         rospy.Subscriber('novatel_data/inspvax', INSPVAX, self.inspvax_handler)
     
-    def bestgnsspos_handler(self, bestpos):
-        utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)
-        print("bestpos.altitude = {}".format(bestpos.altitude))  
-        print("bestpos, utm_pos={}".format(utm_pos))   
-       
-        navsat = self.process_bestpos(bestpos)
-        # Ship ito
-        self.pub_navsatfix_nonspan.publish(navsat)
-        
-        self.pub_odom_bestgnsspos.publish(self.translatelanlon2odom(navsat, "base_link_bestgnsspos"))
-        return
+    
     def translatelanlon2odom(self, navsat, base_link_name):
         if not self.init:
             return 
@@ -218,10 +208,21 @@ class NovatelPublisher(object):
         navsat.position_covariance_type = NavSatFix.COVARIANCE_TYPE_DIAGONAL_KNOWN
         
         return navsat
+    def bestgnsspos_handler(self, bestpos):
+        utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)
+        print("bestpos.altitude = {}".format(bestpos.altitude))  
+        print("bestpos, utm_pos={}".format(utm_pos))   
+       
+        navsat = self.process_bestpos(bestpos)
+        # Ship ito
+        self.pub_navsatfix_nonspan.publish(navsat)
+        
+        self.pub_odom_bestgnsspos.publish(self.translatelanlon2odom(navsat, "base_link_bestgnsspos"))
+        return
 
     def bestpos_handler(self, bestpos): 
         utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)
-        print("bestpos.altitude = {}".format(bestpos.altitude))  
+        print("bestpos.altitude = {}, undulation={}".format(bestpos.altitude,bestpos.undulation))
         print("bestpos, utm_pos={}".format(utm_pos))   
         navsat = self.process_bestpos(bestpos)
         # Ship ito
@@ -236,7 +237,7 @@ class NovatelPublisher(object):
         except ValueError:
             # Probably coordinates out of range for UTM conversion.
             return
-        print("inspvax.altitude = {}".format(inspvax.altitude))
+        print("inspvax.altitude = {}, undulation={}".format(inspvax.altitude,inspvax.undulation))
         print("inspvax, utm_pos={}".format(utm_pos))
         if not self.init and self.zero_start:
             self.origin.x = utm_pos.easting
