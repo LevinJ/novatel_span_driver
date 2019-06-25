@@ -25,5 +25,7 @@
          rather than starting from an arbitrary zero origin. -->
     <param name="zero_start" value="true" />
   </node>
+ <!-- 
    <node type="rviz" name="rviz" pkg="rviz" args="-d $(find novatel_span_driver)/rviz/testppp.rviz" />
+ -->
 </launch>

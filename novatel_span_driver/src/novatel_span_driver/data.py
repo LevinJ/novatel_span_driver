@@ -57,7 +57,7 @@ class DataPort(Port):
             try:
                 header, pkt_str = self.recv()
                 if header is not None:
-                    print("processing message {}".format(header.id))
+                    rospy.loginfo("processing message {}".format(header.id))
                     handlers[header.id].handle(StringIO(pkt_str), header)
 
             except ValueError as e:
