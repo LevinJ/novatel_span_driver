@@ -10,7 +10,7 @@
         inspvaxb: 0.02
         bestposb: 0.1
         bestgnssposb: 0.1
-        corrimudatab: 0.02
+        corrimudatab: 0.01
         inscovb: 1
 # The example setup commands below apply to a Clearpath Robotics Husky running
 # SPAN with dual antennas. Run the SPAN setup wizard on your own platform to generate
