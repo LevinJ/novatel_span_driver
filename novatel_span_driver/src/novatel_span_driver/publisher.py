@@ -92,6 +92,8 @@ class NovatelPublisher(object):
         self.pub_origin = rospy.Publisher('navsat/origin', Pose, queue_size=1, latch=True)
         self.pub_navsatfix = rospy.Publisher('navsat/fix', NavSatFix, queue_size=1)
         self.pub_navsatfix_nonspan = rospy.Publisher('navsat/fix_nonspan', NavSatFix, queue_size=1)
+        self.pub_odom_bestpos = rospy.Publisher('navsat/odom_bestpos', Odometry, queue_size=1)
+        self.pub_odom_bestgnsspos = rospy.Publisher('navsat/odom_bestgnsspos', Odometry, queue_size=1)
 
         if self.publish_tf:
             self.tf_broadcast = tf.TransformBroadcaster()
@@ -108,15 +110,47 @@ class NovatelPublisher(object):
         rospy.Subscriber('novatel_data/inscov', INSCOV, self.inscov_handler)
         rospy.Subscriber('novatel_data/inspvax', INSPVAX, self.inspvax_handler)
     
-    def bestgnsspos_handler(self, bestpos):
-        navsat = self.process_bestpos(bestpos)
-        # Ship ito
-        self.pub_navsatfix_nonspan.publish(navsat)
-        return
+    
+    def translatelanlon2odom(self, navsat, base_link_name):
+        if not self.init:
+            return 
+        if not self.zero_start:
+            return
+        
+        # Convert the latlong to x,y coordinates and publish an Odometry
+        try:
+            utm_pos = geodesy.utm.fromLatLong(navsat.latitude, navsat.longitude)
+        except ValueError:
+            # Probably coordinates out of range for UTM conversion.
+            return
+        odom = Odometry()
+        odom.header.stamp = rospy.Time.now()
+        odom.header.frame_id = self.odom_frame
+        odom.child_frame_id = base_link_name
+        odom.pose.pose.position.x = utm_pos.easting - self.origin.x
+        odom.pose.pose.position.y = utm_pos.northing - self.origin.y
+        odom.pose.pose.position.z = navsat.altitude - self.origin.z
+
+        # Orientation
+        # Save this on an instance variable, so that it can be published
+        # with the IMU message as well.
+#         orientation = tf.transformations.quaternion_from_euler(
+#                 radians(0),
+#                 radians(0),
+#                 -radians(0), 'syxz')
+#         odom.pose.pose.orientation = Quaternion(*orientation)
+#         odom.pose.covariance = POSE_COVAR
+# 
+#         # Twist is relative to vehicle frame
+#         odom.twist.twist.linear.x = 0
+#         odom.twist.twist.linear.y = 0
+#         odom.twist.twist.linear.z = 0
+#         odom.twist.covariance = TWIST_COVAR
+        
+        return odom
     
     def process_bestpos(self, bestpos):
         navsat = NavSatFix()
-
         # TODO: The timestamp here should come from SPAN, not the ROS system time.
         navsat.header.stamp = rospy.Time.now()
         navsat.header.frame_id = self.odom_frame
@@ -174,12 +208,26 @@ class NovatelPublisher(object):
         navsat.position_covariance_type = NavSatFix.COVARIANCE_TYPE_DIAGONAL_KNOWN
         
         return navsat
+    def bestgnsspos_handler(self, bestpos):
+        utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)
+        print("bestpos.altitude = {}".format(bestpos.altitude))  
+        print("bestpos, utm_pos={}".format(utm_pos))   
+       
+        navsat = self.process_bestpos(bestpos)
+        # Ship ito
+        self.pub_navsatfix_nonspan.publish(navsat)
+        
+        self.pub_odom_bestgnsspos.publish(self.translatelanlon2odom(navsat, "base_link_bestgnsspos"))
+        return
 
-    def bestpos_handler(self, bestpos):
-              
+    def bestpos_handler(self, bestpos): 
+        utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)
+        print("bestpos.altitude = {}, undulation={}".format(bestpos.altitude,bestpos.undulation))
+        print("bestpos, utm_pos={}".format(utm_pos))   
         navsat = self.process_bestpos(bestpos)
         # Ship ito
         self.pub_navsatfix.publish(navsat)
+        self.pub_odom_bestpos.publish(self.translatelanlon2odom(navsat, "base_link_bestpos"))
         return
 
     def inspvax_handler(self, inspvax):
@@ -189,11 +237,12 @@ class NovatelPublisher(object):
         except ValueError:
             # Probably coordinates out of range for UTM conversion.
             return
-
+        print("inspvax.altitude = {}, undulation={}".format(inspvax.altitude,inspvax.undulation))
+        print("inspvax, utm_pos={}".format(utm_pos))
         if not self.init and self.zero_start:
             self.origin.x = utm_pos.easting
             self.origin.y = utm_pos.northing
-            self.origin.z = inspvax.altitude
+            self.origin.z = inspvax.altitude + inspvax.undulation
             self.pub_origin.publish(position=self.origin)
 
         odom = Odometry()
@@ -202,7 +251,7 @@ class NovatelPublisher(object):
         odom.child_frame_id = self.base_frame
         odom.pose.pose.position.x = utm_pos.easting - self.origin.x
         odom.pose.pose.position.y = utm_pos.northing - self.origin.y
-        odom.pose.pose.position.z = inspvax.altitude - self.origin.z
+        odom.pose.pose.position.z = inspvax.altitude + inspvax.undulation - self.origin.z
 
         # Orientation
         # Save this on an instance variable, so that it can be published
