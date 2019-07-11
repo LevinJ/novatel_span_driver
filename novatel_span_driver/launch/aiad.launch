@@ -7,7 +7,7 @@
     <param name="port" value="$(arg port)" />
     <rosparam ns="configuration">
       log_request:
-        inspvaxb: 0.02
+        inspvaxb: 0.01
         bestposb: 0.1
         bestgnssposb: 0.1
         corrimudatab: 0.01
