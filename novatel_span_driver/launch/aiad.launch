@@ -8,8 +8,8 @@
     <rosparam ns="configuration">
       log_request:
         inspvaxb: 0.02
-        bestposb: 0.02
-        bestgnssposb: 0.02
+        bestposb: 0.1
+        bestgnssposb: 0.1
         corrimudatab: 0.02
         inscovb: 1
 # The example setup commands below apply to a Clearpath Robotics Husky running
