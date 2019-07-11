@@ -43,7 +43,7 @@ import time
 
 from novatel_span_driver import translator
 
-DEFAULT_IP = '198.161.73.9'
+DEFAULT_IP = '192.168.1.51'
 DEFAULT_PORT = 3001
 
 SOCKET_TIMEOUT = 100.0
