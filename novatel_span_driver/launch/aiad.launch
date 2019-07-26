@@ -1,6 +1,6 @@
 <launch>
-  <arg name="ip" default="192.168.1.51" />
-  <arg name="port" default="3001" />
+  <arg name="ip" default="192.168.8.51" />
+  <arg name="port" default="3002" />
 
   <node name="novatel_span_driver" pkg="novatel_span_driver" type="driver">
     <param name="ip" value="$(arg ip)" />
@@ -34,7 +34,7 @@
 
     <!-- IMU rate; controls scaling of the imu/data topic values. This is a
          function of the underlying hardware IMU rate, which is 100Hz for IMU-CPT. -->
-    <param name="rate" value="100" />
+    <param name="rate" value="200" />
 
     <!-- Disable this if you don't want SPAN to use wheel encoder data. Remap the odom
          topic if your encoders publish elsewhere. -->

@@ -237,8 +237,9 @@ class NovatelPublisher(object):
         except ValueError:
             # Probably coordinates out of range for UTM conversion.
             return
-        print("inspvax.altitude = {}, undulation={}".format(inspvax.altitude,inspvax.undulation))
-        print("inspvax, utm_pos={}".format(utm_pos))
+#         print("inspvax.altitude = {}, undulation={}".format(inspvax.altitude,inspvax.undulation))
+#         print("inspvax, utm_pos={}".format(utm_pos))
+#         rospy.logwarn("inspvax utm_pos {}".format(utm_pos))
         if not self.init and self.zero_start:
             self.origin.x = utm_pos.easting
             self.origin.y = utm_pos.northing
