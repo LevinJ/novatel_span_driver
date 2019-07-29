@@ -28,8 +28,8 @@
 
     <!-- Whether or not the driver should publish a TF, and what frames it should
          be between. This configuration publishes odom -> base_link. -->
-    <param name="publish_tf" value="true" />
-    <param name="odom_frame" value="odom" />
+    <param name="publish_tf" value="false" />
+    <param name="odom_frame" value="map" />
     <param name="base_frame" value="base_link" />
 
     <!-- IMU rate; controls scaling of the imu/data topic values. This is a
