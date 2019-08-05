@@ -99,7 +99,13 @@ class NovatelPublisher(object):
             self.tf_broadcast = tf.TransformBroadcaster()
 
         self.init = False       # If we've been initialized
+        self.init_bestpos = False
+        self.init_bestgnsspos = False
+        
         self.origin = Point()   # Where we've started
+        self.bestgnsspos_orign = Point()
+        self.bestpos_orign = Point()
+        
         self.orientation = [0] * 4  # Empty quaternion until we hear otherwise
         self.orientation_covariance = IMU_ORIENT_COVAR
 
@@ -111,11 +117,7 @@ class NovatelPublisher(object):
         rospy.Subscriber('novatel_data/inspvax', INSPVAX, self.inspvax_handler)
     
     
-    def translatelanlon2odom(self, navsat, base_link_name):
-        if not self.init:
-            return 
-        if not self.zero_start:
-            return
+    def translatelanlon2odom(self, navsat, origin):
         
         # Convert the latlong to x,y coordinates and publish an Odometry
         try:
@@ -126,26 +128,10 @@ class NovatelPublisher(object):
         odom = Odometry()
         odom.header.stamp = rospy.Time.now()
         odom.header.frame_id = self.odom_frame
-        odom.child_frame_id = base_link_name
-        odom.pose.pose.position.x = utm_pos.easting - self.origin.x
-        odom.pose.pose.position.y = utm_pos.northing - self.origin.y
-        odom.pose.pose.position.z = navsat.altitude - self.origin.z
-
-        # Orientation
-        # Save this on an instance variable, so that it can be published
-        # with the IMU message as well.
-#         orientation = tf.transformations.quaternion_from_euler(
-#                 radians(0),
-#                 radians(0),
-#                 -radians(0), 'syxz')
-#         odom.pose.pose.orientation = Quaternion(*orientation)
-#         odom.pose.covariance = POSE_COVAR
-# 
-#         # Twist is relative to vehicle frame
-#         odom.twist.twist.linear.x = 0
-#         odom.twist.twist.linear.y = 0
-#         odom.twist.twist.linear.z = 0
-#         odom.twist.covariance = TWIST_COVAR
+        odom.child_frame_id = self.base_frame
+        odom.pose.pose.position.x = utm_pos.easting - origin.x
+        odom.pose.pose.position.y = utm_pos.northing - origin.y
+        odom.pose.pose.position.z = navsat.altitude - origin.z
         
         return odom
     
@@ -208,26 +194,35 @@ class NovatelPublisher(object):
         navsat.position_covariance_type = NavSatFix.COVARIANCE_TYPE_DIAGONAL_KNOWN
         
         return navsat
+    def publish_gps_odom(self, init_flag, navsat, origin, pub):
+        if not init_flag:
+            utm_pos = geodesy.utm.fromLatLong(navsat.latitude, navsat.longitude)
+            
+            origin.x = utm_pos.easting
+            origin.y = utm_pos.northing
+            origin.z = navsat.altitude
+        else:
+            pub.publish(self.translatelanlon2odom(navsat, origin))
+        return
+    
     def bestgnsspos_handler(self, bestpos):
         utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)
-        print("bestpos.altitude = {}".format(bestpos.altitude))  
-        print("bestpos, utm_pos={}".format(utm_pos))   
-       
+#         print("bestpos.altitude = {}".format(bestpos.altitude))  
+#         print("bestpos, utm_pos={}".format(utm_pos))   
         navsat = self.process_bestpos(bestpos)
-        # Ship ito
+        # Ship it
         self.pub_navsatfix_nonspan.publish(navsat)
-        
-        self.pub_odom_bestgnsspos.publish(self.translatelanlon2odom(navsat, "base_link_bestgnsspos"))
+        self.publish_gps_odom(self.init_bestgnsspos, navsat, self.bestgnsspos_orign, self.pub_odom_bestgnsspos)
         return
 
     def bestpos_handler(self, bestpos): 
         utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)
-        print("bestpos.altitude = {}, undulation={}".format(bestpos.altitude,bestpos.undulation))
-        print("bestpos, utm_pos={}".format(utm_pos))   
+#         print("bestpos.altitude = {}, undulation={}".format(bestpos.altitude,bestpos.undulation))
+#         print("bestpos, utm_pos={}".format(utm_pos))   
         navsat = self.process_bestpos(bestpos)
-        # Ship ito
+        # Ship it
         self.pub_navsatfix.publish(navsat)
-        self.pub_odom_bestpos.publish(self.translatelanlon2odom(navsat, "base_link_bestpos"))
+        self.publish_gps_odom(self.init_bestpos, navsat, self.bestpos_orign, self.pub_odom_bestpos)
         return
 
     def inspvax_handler(self, inspvax):
