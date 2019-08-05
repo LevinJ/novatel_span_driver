@@ -252,10 +252,16 @@ class NovatelPublisher(object):
         # Orientation
         # Save this on an instance variable, so that it can be published
         # with the IMU message as well.
+        corrected_yaw = -inspvax.azimuth + 90 + 180
+        if corrected_yaw < 0:
+            corrected_yaw += 360
+        if corrected_yaw > 360:
+            corrected_yaw -= 360
+        rospy.logdebug("yaw= {}, corrected_yaw={}".format(inspvax.azimuth, corrected_yaw))
         self.orientation = tf.transformations.quaternion_from_euler(
                 radians(inspvax.roll),
                 radians(inspvax.pitch),
-                -radians(inspvax.azimuth), 'syxz')
+                radians(corrected_yaw), 'syxz')
         odom.pose.pose.orientation = Quaternion(*self.orientation)
         odom.pose.covariance[21] = self.orientation_covariance[0] = pow(inspvax.pitch_std, 2)
         odom.pose.covariance[28] = self.orientation_covariance[4] = pow(inspvax.roll_std, 2)
