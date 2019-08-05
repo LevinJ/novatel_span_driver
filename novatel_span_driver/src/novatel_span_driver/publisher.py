@@ -139,7 +139,7 @@ class NovatelPublisher(object):
         navsat = NavSatFix()
         # TODO: The timestamp here should come from SPAN, not the ROS system time.
         navsat.header.stamp = rospy.Time.now()
-        navsat.header.frame_id = self.odom_frame
+        navsat.header.frame_id = "antenna"
 
         # Assume GPS - this isn't exposed
         navsat.status.service = NavSatStatus.SERVICE_GPS
@@ -287,7 +287,7 @@ class NovatelPublisher(object):
         # TODO: Work out these covariances properly. Logs provide covariances in local frame, not body
         imu = Imu()
         imu.header.stamp = rospy.Time.now()
-        imu.header.frame_id = self.base_frame
+        imu.header.frame_id = "imu"
 
         # Populate orientation field with one from inspvax message.
         imu.orientation = Quaternion(*self.orientation)
