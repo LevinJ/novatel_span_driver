@@ -201,8 +201,8 @@ class NovatelPublisher(object):
             origin.x = utm_pos.easting
             origin.y = utm_pos.northing
             origin.z = navsat.altitude
-        else:
-            pub.publish(self.translatelanlon2odom(navsat, origin))
+        
+        pub.publish(self.translatelanlon2odom(navsat, origin))
         return
     
     def bestgnsspos_handler(self, bestpos):
@@ -257,7 +257,7 @@ class NovatelPublisher(object):
             corrected_yaw += 360
         if corrected_yaw > 360:
             corrected_yaw -= 360
-        rospy.logdebug("yaw= {}, corrected_yaw={}".format(inspvax.azimuth, corrected_yaw))
+        rospy.loginfo("yaw= {}, corrected_yaw={}".format(inspvax.azimuth, corrected_yaw))
         self.orientation = tf.transformations.quaternion_from_euler(
                 radians(inspvax.roll),
                 radians(inspvax.pitch),
