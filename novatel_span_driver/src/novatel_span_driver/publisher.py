@@ -201,28 +201,29 @@ class NovatelPublisher(object):
             origin.x = utm_pos.easting
             origin.y = utm_pos.northing
             origin.z = navsat.altitude
+
         
         pub.publish(self.translatelanlon2odom(navsat, origin))
         return
     
     def bestgnsspos_handler(self, bestpos):
         utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)
-#         print("bestpos.altitude = {}".format(bestpos.altitude))  
-#         print("bestpos, utm_pos={}".format(utm_pos))   
         navsat = self.process_bestpos(bestpos)
+        rospy.logwarn("bestgnsspos utm_pos {}, altitude={}".format(utm_pos, navsat.altitude)) 
         # Ship it
         self.pub_navsatfix_nonspan.publish(navsat)
         self.publish_gps_odom(self.init_bestgnsspos, navsat, self.bestgnsspos_orign, self.pub_odom_bestgnsspos)
+        self.init_bestgnsspos = True
         return
 
     def bestpos_handler(self, bestpos): 
-        utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)
-#         print("bestpos.altitude = {}, undulation={}".format(bestpos.altitude,bestpos.undulation))
-#         print("bestpos, utm_pos={}".format(utm_pos))   
+        utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)   
         navsat = self.process_bestpos(bestpos)
+        rospy.logwarn("bestpos utm_pos {}, altitude={}".format(utm_pos, navsat.altitude)) 
         # Ship it
         self.pub_navsatfix.publish(navsat)
         self.publish_gps_odom(self.init_bestpos, navsat, self.bestpos_orign, self.pub_odom_bestpos)
+        self.init_bestpos = True
         return
 
     def inspvax_handler(self, inspvax):
@@ -234,7 +235,7 @@ class NovatelPublisher(object):
             return
 #         print("inspvax.altitude = {}, undulation={}".format(inspvax.altitude,inspvax.undulation))
 #         print("inspvax, utm_pos={}".format(utm_pos))
-#         rospy.logwarn("inspvax utm_pos {}".format(utm_pos))
+        rospy.logwarn("inspvax utm_pos {}, altitude={}".format(utm_pos, inspvax.altitude + inspvax.undulation))
         if not self.init and self.zero_start:
             self.origin.x = utm_pos.easting
             self.origin.y = utm_pos.northing
@@ -253,6 +254,7 @@ class NovatelPublisher(object):
         # Save this on an instance variable, so that it can be published
         # with the IMU message as well.
         corrected_yaw = -inspvax.azimuth + 90 + 180
+#         corrected_yaw = -inspvax.azimuth + 90
         if corrected_yaw < 0:
             corrected_yaw += 360
         if corrected_yaw > 360:
