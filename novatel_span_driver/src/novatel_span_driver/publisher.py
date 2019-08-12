@@ -253,8 +253,8 @@ class NovatelPublisher(object):
         # Orientation
         # Save this on an instance variable, so that it can be published
         # with the IMU message as well.
-        corrected_yaw = -inspvax.azimuth + 90 + 180
-#         corrected_yaw = -inspvax.azimuth + 90
+#         corrected_yaw = -inspvax.azimuth + 90 + 180
+        corrected_yaw = -inspvax.azimuth + 90
         if corrected_yaw < 0:
             corrected_yaw += 360
         if corrected_yaw > 360:
