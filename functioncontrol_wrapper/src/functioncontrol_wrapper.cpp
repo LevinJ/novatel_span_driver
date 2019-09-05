@@ -24,7 +24,7 @@ ModuleControl::ModuleControlMgr * g_moudleMgr;
 
 int init(void (*functionPtr)(void *obj, int cmd)){
 	g_functionPtr = functionPtr;
-	g_moudleMgr = new ModuleControl::ModuleControlMgr(ModuleControl::DRIVER_USB_LONG_CAM,
+	g_moudleMgr = new ModuleControl::ModuleControlMgr(ModuleControl::DRIVER_NOVATEL,
           g_functionPtr, NULL);
 	// g_functionPtr(NULL, 2);
 	return 0;
