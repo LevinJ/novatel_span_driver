@@ -36,6 +36,7 @@ import translator
 
 from cStringIO import StringIO
 from threading import Lock
+from functioncontrol_wrapper import g_fcwrapper, ModuleStatus
 
 
 class DataPort(Port):
@@ -52,9 +53,16 @@ class DataPort(Port):
 
         bad_pkts = set()
         pkt_id = None
-
+        g_fcwrapper.start()
         while not self.finish.is_set():
             try:
+                print("g_fcwrapper.module_status={}".format(g_fcwrapper.module_status))
+                if (g_fcwrapper.module_status == ModuleStatus.PENDING):
+                    continue
+                if (g_fcwrapper.module_status == ModuleStatus.FINISH):
+                    rospy.signal_shutdown("Module requested to be shut down.")
+                    continue
+                g_fcwrapper.verify()    
                 header, pkt_str = self.recv()
                 if header is not None:
 #                     rospy.loginfo("processing message {}".format(header.id))
