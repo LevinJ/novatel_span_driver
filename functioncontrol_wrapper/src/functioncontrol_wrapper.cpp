@@ -34,7 +34,7 @@ int init(void (*functionPtr)(void *obj, int cmd)){
 
 void verify(){
 	cout<<"verify called"<<endl;
-	// g_moudleMgr->verify();
+	g_moudleMgr->verify();
 
 }
 

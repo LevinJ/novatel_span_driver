@@ -35,10 +35,10 @@ def callback(obj, cmd):
     return
 
 class ModuleStatus(Enum):
-    FINISH = 1
-    RUNNING = 2
-    PENDING = 3
-    NOCONTROL = 4
+    FINISH = 2
+    RUNNING = 4
+    PENDING = 5
+    NOCONTROL = 100
 
 
 
@@ -57,8 +57,10 @@ class FunctionControlWrapper(object):
     def start(self):
         if self.module_status == ModuleStatus.NOCONTROL:
             return
-
-        lib = cdll.LoadLibrary('/home/wangxh/ADL3_Base/devel/lib/libfunctioncontrol_wrapper.so')
+        lib_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 
+                                                            "../../../../../../../../../devel/lib/libfunctioncontrol_wrapper.so"))
+        print("library path={}".format(lib_path))
+        lib = cdll.LoadLibrary(lib_path)
 
         lib.init.argtypes = [CALLBACKFUNCTYPE]
         lib.init.restype = c_int
