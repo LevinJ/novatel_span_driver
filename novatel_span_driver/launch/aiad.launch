@@ -38,7 +38,7 @@
 
     <!-- Disable this if you don't want SPAN to use wheel encoder data. Remap the odom
          topic if your encoders publish elsewhere. -->
-    <param name="enable_wheel_velocity" value="true" />
+    <param name="enable_wheel_velocity" value="false" />
 
     <!-- Disable this if you'd like the Odometry to be absolute within the UTM zone
          rather than starting from an arbitrary zero origin. -->
