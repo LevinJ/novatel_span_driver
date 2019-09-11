@@ -14,7 +14,9 @@ using namespace std;
 extern "C" {
 void (*g_functionPtr)(void *obj, int cmd) = NULL;
 
-ModuleControl::ModuleControlMgr * g_moudleMgr;
+std::unique_ptr<ModuleControl::ModuleControlMgr> g_moudleMgr{nullptr};
+
+// ModuleControl::ModuleControlMgr * g_moudleMgr;
 
 // void moduleControlHandler(void* obj, int cmd)
 // {
@@ -24,8 +26,8 @@ ModuleControl::ModuleControlMgr * g_moudleMgr;
 
 int init(void (*functionPtr)(void *obj, int cmd)){
 	g_functionPtr = functionPtr;
-	g_moudleMgr = new ModuleControl::ModuleControlMgr(ModuleControl::DRIVER_NOVATEL,
-          g_functionPtr, NULL);
+	g_moudleMgr.reset(new ModuleControl::ModuleControlMgr(ModuleControl::DRIVER_NOVATEL,
+          g_functionPtr, NULL));
 	// g_functionPtr(NULL, 2);
 	return 0;
 }

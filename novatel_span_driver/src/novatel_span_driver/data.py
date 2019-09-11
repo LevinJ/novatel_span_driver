@@ -57,7 +57,7 @@ class DataPort(Port):
         while not self.finish.is_set():
             try:
                 print("g_fcwrapper.module_status={}".format(g_fcwrapper.module_status))
-                if (g_fcwrapper.module_status == ModuleStatus.PENDING):
+                if (g_fcwrapper.module_status != ModuleStatus.RUNNING):
                     continue
                 header, pkt_str = self.recv()
                 if header is not None:

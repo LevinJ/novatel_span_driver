@@ -44,17 +44,20 @@ def main():
 
     if rospy.get_param('~enable_wheel_velocity', False):
         vel = wheel_velocity.NovatelWheelVelocity(bridge.ports['data'].sock)
+    rospy.logfatal("start the monitoring process ")
     g_fcwrapper.start()
+    rospy.logfatal("initialzied the monitoring ")
     
     while not rospy.is_shutdown():
-        g_fcwrapper.verify()   
-        if (g_fcwrapper.module_status == ModuleStatus.FINISH):
-            rospy.signal_shutdown("Module requested to be shut down.") 
+        rospy.logfatal("Module status = {}".format(g_fcwrapper.module_status))   
         rospy.sleep(1)  # sleep for one second
-
+        rospy.logfatal("start the verify")
+        g_fcwrapper.verify()
+        rospy.logfatal("completed the verify")
 
 if __name__ == '__main__':
     try:
         main()
+        rospy.logfatal("node span driver has been shutdown ")
     except rospy.ROSInterruptException:
         pass

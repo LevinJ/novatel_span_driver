@@ -5,7 +5,7 @@ from  ctypes import *
 import time
 import os
 from enum import Enum 
-
+import rospy
 
 
 
@@ -29,15 +29,17 @@ CALLBACKFUNCTYPE = CFUNCTYPE(None, c_void_p, c_int)
 def callback(obj, cmd):
     global g_fcwrapper
     g_fcwrapper.module_status = ModuleStatus(cmd)
-
+    rospy.logfatal("callback called {}, {}".format(obj, g_fcwrapper.module_status))
     print("callback called {}, {}".format(obj, cmd))
-
+    if (g_fcwrapper.module_status == ModuleStatus.FINISH):
+        rospy.logfatal("Module requested to be shut down.")
+        rospy.signal_shutdown("Module requested to be shut down.") 
     return
 
 class ModuleStatus(Enum):
-    FINISH = 2
-    RUNNING = 4
-    PENDING = 5
+    FINISH = 3
+    RUNNING = 2
+    PENDING = 1
     NOCONTROL = 100
 
 
@@ -45,7 +47,7 @@ class ModuleStatus(Enum):
 class FunctionControlWrapper(object):
     def __init__(self):
 
-        self.module_status = ModuleStatus.RUNNING
+        self.module_status = ModuleStatus.PENDING
 
         
         return

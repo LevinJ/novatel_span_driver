@@ -1,0 +1,4 @@
+<launch>
+  <node name="testmonitor" pkg="testmonitor" type="testmonitor">
+  </node>
+</launch>

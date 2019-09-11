@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(functioncontrol_wrapper)
+project(testmonitor)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -12,6 +12,9 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
 )
+set(CMAKE_MODULE_PATH /my_shared_folder/ADL3_Base/src/common/cmake)
+find_package(GLog REQUIRED)
+set(common_Dir /my_shared_folder/ADL3_Base/src/common)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -104,7 +107,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES functioncontrol_wrapper
+#  LIBRARIES testmonitor
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
@@ -119,18 +122,14 @@ include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
 )
-include_directories(/home/wangxh/ADL3_Base/src/moduleControl/include)
-set(modulecontrol_LIBRARIES /home/wangxh/ADL3_Base/src/moduleControl/lib/libfunctioncontrol.so)
+include_directories(/my_shared_folder/ADL3_Base/src/moduleControl/include)
+set(modulecontrol_LIBRARIES /my_shared_folder/ADL3_Base/src/moduleControl/lib/libfunctioncontrol.so)
 
 ## Declare a C++ library
- add_library(${PROJECT_NAME}
-   src/functioncontrol_wrapper.cpp
- )
-target_link_libraries(${PROJECT_NAME}
-    ${catkin_LIBRARIES}
-    ${modulecontrol_LIBRARIES}
-  #  ${OpenCV_LIBS}
-    )
+# add_library(${PROJECT_NAME}
+#   src/${PROJECT_NAME}/testmonitor.cpp
+# )
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -139,7 +138,7 @@ target_link_libraries(${PROJECT_NAME}
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/functioncontrol_wrapper_node.cpp)
+# add_executable(${PROJECT_NAME}_node src/testmonitor_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -196,10 +195,15 @@ target_link_libraries(${PROJECT_NAME}
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_functioncontrol_wrapper.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_testmonitor.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
+
+add_executable(testmonitor src/testmonitor.cpp)
+target_link_libraries(testmonitor ${catkin_LIBRARIES} ${modulecontrol_LIBRARIES})
+add_dependencies(testmonitor testmonitor_generate_messages_cpp)
