@@ -72,7 +72,7 @@ class ConnectNovatel(threading.Thread):
             sock = None
             while sock == None:
                 if self.finish.is_set():
-                    rospy.logfatal('thread completion signal received')
+                    rospy.loginfo('thread completion signal received')
                     return
                 rospy.sleep(1.0)
                 if (g_fcwrapper.module_status == ModuleStatus.RUNNING  or g_fcwrapper.module_status == ModuleStatus.NOCONTROL ):
@@ -195,7 +195,7 @@ def configure_receiver(port):
 def shutdown():
     # monitor.finish.set()
     # monitor.join()
-    rospy.logfatal("shutdown signal received!!!")
+    rospy.loginfo("shutdown signal received!!!")
     novatel_connction.finish.set()
     novatel_connction.join()
     rospy.loginfo("novatel connection finished.")

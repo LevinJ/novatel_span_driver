@@ -29,10 +29,10 @@ CALLBACKFUNCTYPE = CFUNCTYPE(None, c_void_p, c_int)
 def callback(obj, cmd):
     global g_fcwrapper
     g_fcwrapper.module_status = ModuleStatus(cmd)
-    rospy.logfatal("callback called {}, {}".format(obj, g_fcwrapper.module_status))
+    rospy.loginfo("callback called {}, {}".format(obj, g_fcwrapper.module_status))
     print("callback called {}, {}".format(obj, cmd))
     if (g_fcwrapper.module_status == ModuleStatus.FINISH):
-        rospy.logfatal("Module requested to be shut down.")
+        rospy.loginfo("Module requested to be shut down.")
         rospy.signal_shutdown("Module requested to be shut down.") 
     return
 
