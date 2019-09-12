@@ -34,6 +34,7 @@ def callback(obj, cmd):
     if (g_fcwrapper.module_status == ModuleStatus.FINISH):
         rospy.loginfo("Module requested to be shut down.")
         rospy.signal_shutdown("Module requested to be shut down.") 
+        exit(code=0)
     return
 
 class ModuleStatus(Enum):
