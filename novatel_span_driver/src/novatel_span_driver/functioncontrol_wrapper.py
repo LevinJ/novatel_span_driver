@@ -48,7 +48,7 @@ class ModuleStatus(Enum):
 class FunctionControlWrapper(object):
     def __init__(self):
 
-        self.module_status = ModuleStatus.PENDING
+        self.module_status = ModuleStatus.NOCONTROL
 
         
         return
