@@ -62,6 +62,7 @@ class DataPort(Port):
                 header, pkt_str = self.recv()
                 if header is not None:
 #                     rospy.loginfo("processing message {}".format(header.id))
+                    header.sequence = pkt_counters[header.id]
                     handlers[header.id].handle(StringIO(pkt_str), header)
 
             except ValueError as e:
@@ -83,3 +84,4 @@ class DataPort(Port):
             else:
                 pkt_counters[header.id] += 1
                 pkt_times[header.id] = header.gps_week_seconds  # only track times of msgs that are part of novatel msgs
+            

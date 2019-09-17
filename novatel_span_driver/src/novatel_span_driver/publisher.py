@@ -140,6 +140,7 @@ class NovatelPublisher(object):
         # TODO: The timestamp here should come from SPAN, not the ROS system time.
         navsat.header.stamp = rospy.Time.now()
         navsat.header.frame_id = "antenna"
+        navsat.header.seq = bestpos.header.sequence
 
         # Assume GPS - this isn't exposed
         navsat.status.service = NavSatStatus.SERVICE_GPS
