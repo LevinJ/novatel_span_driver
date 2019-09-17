@@ -9,7 +9,7 @@ uint8 msg_type
 
 uint8 port_addr
 uint16 length
-uint16 sequence
+uint32 sequence
 
 uint8 idle_time
 uint8 time_status
