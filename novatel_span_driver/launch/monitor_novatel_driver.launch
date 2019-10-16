@@ -1,0 +1,12 @@
+<!--
+     This launch file launches aiai_loclization module,and will also respond to start/pending/finish requests from monitoring module.
+       
+-->
+
+<launch>
+  <node pkg="aiad_localization" type="node_control" name="novatel_driver_node">
+  	<param name="lanuch_file" value="$(find novatel_span_driver)/launch/aiad.launch" />
+  	<param name="node_list" value="/novatel_span_driver" />  
+  </node>
+
+</launch>
