@@ -74,9 +74,11 @@ class DataPort(Port):
                 if header.id not in handlers and header.id not in pkt_counters:
                     rospy.logwarn("No handler for message id %d" % header.id)
 
-            except translator.TranslatorError:
+            except translator.TranslatorError as e:
                 if header.id not in bad_pkts:
                     rospy.logwarn("Error parsing %s.%d" % header.id)
                     bad_pkts.add(pkt)
+            except Exception as e:
+                rospy.logwarn(str(e))
                     
             
