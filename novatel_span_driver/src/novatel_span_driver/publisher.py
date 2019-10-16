@@ -210,7 +210,7 @@ class NovatelPublisher(object):
     def bestgnsspos_handler(self, bestpos):
         utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)
         navsat = self.process_bestpos(bestpos)
-        rospy.logwarn("bestgnsspos utm_pos {}, altitude={}".format(utm_pos, navsat.altitude)) 
+#         rospy.logwarn("bestgnsspos utm_pos {}, altitude={}".format(utm_pos, navsat.altitude)) 
         # Ship it
         self.pub_navsatfix_nonspan.publish(navsat)
         self.publish_gps_odom(self.init_bestgnsspos, navsat, self.bestgnsspos_orign, self.pub_odom_bestgnsspos)
@@ -220,7 +220,7 @@ class NovatelPublisher(object):
     def bestpos_handler(self, bestpos): 
         utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)   
         navsat = self.process_bestpos(bestpos)
-        rospy.logwarn("bestpos utm_pos {}, altitude={}".format(utm_pos, navsat.altitude)) 
+#         rospy.logwarn("bestpos utm_pos {}, altitude={}".format(utm_pos, navsat.altitude)) 
         # Ship it
         self.pub_navsatfix.publish(navsat)
         self.publish_gps_odom(self.init_bestpos, navsat, self.bestpos_orign, self.pub_odom_bestpos)
@@ -236,7 +236,7 @@ class NovatelPublisher(object):
             return
 #         print("inspvax.altitude = {}, undulation={}".format(inspvax.altitude,inspvax.undulation))
 #         print("inspvax, utm_pos={}".format(utm_pos))
-        rospy.logwarn("inspvax utm_pos {}, altitude={}".format(utm_pos, inspvax.altitude + inspvax.undulation))
+#         rospy.logwarn("inspvax utm_pos {}, altitude={}".format(utm_pos, inspvax.altitude + inspvax.undulation))
         if not self.init and self.zero_start:
             self.origin.x = utm_pos.easting
             self.origin.y = utm_pos.northing
@@ -260,7 +260,7 @@ class NovatelPublisher(object):
             corrected_yaw += 360
         if corrected_yaw > 360:
             corrected_yaw -= 360
-        rospy.loginfo("yaw= {}, corrected_yaw={}".format(inspvax.azimuth, corrected_yaw))
+#         rospy.loginfo("yaw= {}, corrected_yaw={}".format(inspvax.azimuth, corrected_yaw))
         self.orientation = tf.transformations.quaternion_from_euler(
                 radians(inspvax.roll),
                 radians(inspvax.pitch),
