@@ -40,13 +40,11 @@ import socket
 import struct
 from cStringIO import StringIO
 import time
-import threading
 
 from novatel_span_driver import translator
-from functioncontrol_wrapper import g_fcwrapper, ModuleStatus
 
-DEFAULT_IP = '192.168.1.51'
-DEFAULT_PORT = 3001
+DEFAULT_IP = '192.168.8.51'
+DEFAULT_PORT = 3002
 
 SOCKET_TIMEOUT = 100.0
 socks = []
@@ -54,64 +52,43 @@ ports = {}
 monitor = Monitor(ports)
 
 
-class ConnectNovatel(threading.Thread):
-    def __init__(self):
-        super(ConnectNovatel, self).__init__()
-        self.finish = threading.Event()
-
-    def run(self):
-       
-        ip = rospy.get_param('~ip', DEFAULT_IP)
-        data_port = rospy.get_param('~port', DEFAULT_PORT)
-
-        # Pass this parameter to use pcap data rather than a socket to a device.
-        # For testing the node itself--to exercise downstream algorithms, use a bag.
-        pcap_file_name = rospy.get_param('~pcap_file', False)
-
-        if not pcap_file_name:
-            sock = None
-            while sock == None:
-                if self.finish.is_set():
-                    rospy.loginfo('thread completion signal received')
-                    return
-                rospy.sleep(1.0)
-                if (g_fcwrapper.module_status == ModuleStatus.RUNNING  or g_fcwrapper.module_status == ModuleStatus.NOCONTROL ):
-                    sock = create_sock('data', ip, data_port)
-        else:
-            sock = create_test_sock(pcap_file_name)
-
-        rospy.loginfo('socket connected: ')
-        ports['data'] = DataPort(sock)
-
-        configure_receiver(sock)
-
-        for name, port in ports.items():
-            port.start()
-            rospy.loginfo("Port %s thread started." % name)
-        monitor.start()
-
-        return
-            
-
-novatel_connction = ConnectNovatel()
-
 def init():
-    novatel_connction.start()
+    ip = rospy.get_param('~ip', DEFAULT_IP)
+    data_port = rospy.get_param('~port', DEFAULT_PORT)
+
+    # Pass this parameter to use pcap data rather than a socket to a device.
+    # For testing the node itself--to exercise downstream algorithms, use a bag.
+    pcap_file_name = rospy.get_param('~pcap_file', False)
+
+    if not pcap_file_name:
+        sock = create_sock('data', ip, data_port)
+    else:
+        sock = create_test_sock(pcap_file_name)
+    
+    if sock is None:
+        return
+    ports['data'] = DataPort(sock)
+
+    configure_receiver(sock)
+
+    for name, port in ports.items():
+        port.start()
+        rospy.loginfo("Port %s thread started." % name)
+    monitor.start()
+
     rospy.on_shutdown(shutdown)
-    return
 
 
 def create_sock(name, ip, port):
     try:
-        print('start connecting...')
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ip_port = (ip, port)
-	sock.settimeout(1)
+        sock.settimeout(1)
         sock.connect(ip_port)
-        rospy.loginfo("Successfully connected to %%s port at %s:%d" % ip_port % name)
     except socket.error as e:
         rospy.logfatal("Couldn't connect to %%s port at %s:%d: %%s" % ip_port % (name, str(e)))
         return None
+    rospy.loginfo("Successfully connected to %%s port at %s:%d" % ip_port % name)
     sock.settimeout(SOCKET_TIMEOUT)
     socks.append(sock)
     return sock
@@ -193,12 +170,9 @@ def configure_receiver(port):
 
 
 def shutdown():
-    # monitor.finish.set()
-    # monitor.join()
-    rospy.loginfo("shutdown signal received!!!")
-    novatel_connction.finish.set()
-    novatel_connction.join()
-    rospy.loginfo("novatel connection finished.")
+    monitor.finish.set()
+    monitor.join()
+    rospy.loginfo("Thread monitor finished.")
     for name, port in ports.items():
         port.finish.set()
         try :

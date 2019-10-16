@@ -30,7 +30,6 @@ from novatel_span_driver import bridge
 from novatel_span_driver import diagnostics
 from novatel_span_driver import publisher
 from novatel_span_driver import wheel_velocity
-from novatel_span_driver.functioncontrol_wrapper import g_fcwrapper, ModuleStatus
 
 
 def main():
@@ -44,20 +43,12 @@ def main():
 
     if rospy.get_param('~enable_wheel_velocity', False):
         vel = wheel_velocity.NovatelWheelVelocity(bridge.ports['data'].sock)
-    rospy.loginfo("start the span driver monitoring process ")
-    g_fcwrapper.start()
-    rospy.loginfo("initialzied the span driver monitoring ")
-    
-    while not rospy.is_shutdown():
-        rospy.loginfo("Module status = {}".format(g_fcwrapper.module_status))   
-        rospy.sleep(0.1)  # sleep for one second
-        rospy.loginfo("start the verify")
-        g_fcwrapper.verify()
-        rospy.loginfo("completed the verify")
+
+    rospy.spin()
+
 
 if __name__ == '__main__':
     try:
         main()
-        rospy.loginfo("node span driver has been shutdown ")
     except rospy.ROSInterruptException:
         pass

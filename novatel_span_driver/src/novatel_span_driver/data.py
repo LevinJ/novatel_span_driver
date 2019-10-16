@@ -36,7 +36,6 @@ import translator
 
 from cStringIO import StringIO
 from threading import Lock
-from functioncontrol_wrapper import g_fcwrapper, ModuleStatus
 
 
 class DataPort(Port):
@@ -53,15 +52,16 @@ class DataPort(Port):
 
         bad_pkts = set()
         pkt_id = None
-        
+
         while not self.finish.is_set():
             try:
-                print("g_fcwrapper.module_status={}".format(g_fcwrapper.module_status))
-                if (g_fcwrapper.module_status != ModuleStatus.RUNNING and g_fcwrapper.module_status != ModuleStatus.NOCONTROL):
-                    continue
                 header, pkt_str = self.recv()
                 if header is not None:
 #                     rospy.loginfo("processing message {}".format(header.id))
+                    if header.id not in pkt_counters:
+                        pkt_counters[header.id] = 0
+                    else:
+                        pkt_counters[header.id] += 1
                     header.sequence = pkt_counters[header.id]
                     handlers[header.id].handle(StringIO(pkt_str), header)
 
@@ -79,9 +79,4 @@ class DataPort(Port):
                     rospy.logwarn("Error parsing %s.%d" % header.id)
                     bad_pkts.add(pkt)
                     
-            if header.id not in pkt_counters:
-                pkt_counters[header.id] = 0
-            else:
-                pkt_counters[header.id] += 1
-                pkt_times[header.id] = header.gps_week_seconds  # only track times of msgs that are part of novatel msgs
             
