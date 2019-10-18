@@ -83,7 +83,7 @@ def create_sock(name, ip, port):
     try:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         ip_port = (ip, port)
-        sock.settimeout(1)
+       # sock.settimeout(1)
         sock.connect(ip_port)
     except socket.error as e:
         rospy.logfatal("Couldn't connect to %%s port at %s:%d: %%s" % ip_port % (name, str(e)))
