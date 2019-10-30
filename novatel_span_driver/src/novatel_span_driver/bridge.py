@@ -160,7 +160,8 @@ def configure_receiver(port):
 
         logger = receiver_config.get('log_request', [])
         rospy.loginfo("Enabling %i log outputs from SPAN system." % len(logger))
-        port.send('unlogall ICOM2 true \r\n')
+        port.send('unlogall ICOM2 true\r\n')
+        port.send('unlogall ICOM2_30 true\r\n')
         for log in logger:
             port.send('log ' + log + ' ontime ' + str(logger[log]) + '\r\n')
 
