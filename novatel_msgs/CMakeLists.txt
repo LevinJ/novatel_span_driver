@@ -17,6 +17,7 @@ add_message_files(
   CORRIMUDATA.msg
   INSCOV.msg
   INSPVAX.msg 
+  RAWIMUDATA.msg
 )
 
 generate_messages(

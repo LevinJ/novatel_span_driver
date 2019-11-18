@@ -30,13 +30,32 @@ import rospy
 import tf
 import geodesy.utm
 
-from novatel_msgs.msg import BESTPOS, CORRIMUDATA, INSCOV, INSPVAX
+from novatel_msgs.msg import BESTPOS, CORRIMUDATA, INSCOV, INSPVAX, RAWIMUDATA
 from sensor_msgs.msg import Imu, NavSatFix, NavSatStatus
 from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Quaternion, Point, Pose, Twist
 
 from math import radians, pow
 
+class CalibrateTime(object):
+    def __init__(self):
+        self.first_time_match = {}
+        #seconds for one week
+        self.week_secs = 1 * 7 * 24 * 60 * 60
+        return
+    def get_time(self, msg_name, gps_stamp):
+        if not msg_name in self.first_time_match:
+            self.first_time_match[msg_name] = (gps_stamp, rospy.Time.now())
+            
+        offset1 = (gps_stamp['gps_week_seconds'] - self.first_time_match[msg_name][0]['gps_week_seconds']) * 1e-3
+        offset2 = (gps_stamp['gps_week'] - self.first_time_match[msg_name][0]['gps_week']) * self.week_secs
+        offset = rospy.Duration(offset1 + offset2)
+        cur_time = self.first_time_match[msg_name][1] + offset
+        
+        return cur_time
+    
+    
+g_CalibrateTime = CalibrateTime()
 # FIXED COVARIANCES
 # TODO: Work these out...
 IMU_ORIENT_COVAR = [1e-3, 0, 0,
@@ -87,6 +106,7 @@ class NovatelPublisher(object):
         self.imu_rate = rospy.get_param('~rate', 100)
 
         # Topic publishers
+        self.pub_rawimu = rospy.Publisher('imu/raw_data', Imu, queue_size=1000)
         self.pub_imu = rospy.Publisher('imu/data', Imu, queue_size=1)
         self.pub_odom = rospy.Publisher('navsat/odom', Odometry, queue_size=1)
         self.pub_origin = rospy.Publisher('navsat/origin', Pose, queue_size=1, latch=True)
@@ -112,9 +132,10 @@ class NovatelPublisher(object):
         # Subscribed topics
         rospy.Subscriber('novatel_data/bestpos', BESTPOS, self.bestpos_handler)
         rospy.Subscriber('novatel_data/bestgnsspos', BESTPOS, self.bestgnsspos_handler)
-        rospy.Subscriber('novatel_data/corrimudata', CORRIMUDATA, self.corrimudata_handler)
+        rospy.Subscriber('novatel_data/corrimudata', CORRIMUDATA, self.corrimudata_handler, queue_size=2000)
         rospy.Subscriber('novatel_data/inscov', INSCOV, self.inscov_handler)
         rospy.Subscriber('novatel_data/inspvax', INSPVAX, self.inspvax_handler)
+        rospy.Subscriber('novatel_data/rawimudata', RAWIMUDATA, self.rawimudata_handler, queue_size=2000)
     
     
     def translatelanlon2odom(self, navsat, origin):
@@ -295,7 +316,8 @@ class NovatelPublisher(object):
     def corrimudata_handler(self, corrimudata):
         # TODO: Work out these covariances properly. Logs provide covariances in local frame, not body
         imu = Imu()
-        imu.header.stamp = rospy.Time.now()
+        gps_stamp = {'gps_week': corrimudata.header.gps_week, 'gps_week_seconds': corrimudata.header.gps_week_seconds}
+        imu.header.stamp = g_CalibrateTime.get_time("imu", gps_stamp)
         imu.header.frame_id = "imu"
 
         # Populate orientation field with one from inspvax message.
@@ -313,6 +335,34 @@ class NovatelPublisher(object):
         imu.linear_acceleration.x = corrimudata.x_accel * self.imu_rate
         imu.linear_acceleration.y = corrimudata.y_accel * self.imu_rate
         imu.linear_acceleration.z = corrimudata.z_accel * self.imu_rate
+        imu.linear_acceleration_covariance = IMU_ACCEL_COVAR
+
+        self.pub_imu.publish(imu)
+    def rawimudata_handler(self, rawimudata):
+        # TODO: Work out these covariances properly. Logs provide covariances in local frame, not body
+        imu = Imu()
+        gps_stamp = {'gps_week': rawimudata.header.gps_week, 'gps_week_seconds': rawimudata.header.gps_week_seconds}
+        imu.header.stamp = g_CalibrateTime.get_time("raw_imu", gps_stamp)
+        imu.header.frame_id = "imu"
+
+        # Populate orientation field with one from inspvax message.
+        imu.orientation = Quaternion(*self.orientation)
+        imu.orientation_covariance = self.orientation_covariance
+
+        # Angular rates (rad/s)
+        # rawimudata log provides instantaneous rates so multiply by IMU rate in Hz
+        gryo_scale = 720.0/2^31
+        imu.angular_velocity.x = rawimudata.x_rate * gryo_scale
+        imu.angular_velocity.y = -rawimudata.y_rate * gryo_scale
+        imu.angular_velocity.z = rawimudata.z_rate * gryo_scale
+        imu.angular_velocity_covariance = IMU_VEL_COVAR
+
+        # Linear acceleration (m/s^2)
+#         self.imu_rate
+        accel_scale = 200.0/2^31 * self.imu_rate
+        imu.linear_acceleration.x = rawimudata.x_accel * accel_scale
+        imu.linear_acceleration.y = -rawimudata.y_accel * accel_scale
+        imu.linear_acceleration.z = rawimudata.z_accel * accel_scale
         imu.linear_acceleration_covariance = IMU_ACCEL_COVAR
 
         self.pub_imu.publish(imu)

@@ -58,7 +58,7 @@ class DataPort(Port):
             if header is None:
                 continue
             
-#             rospy.loginfo("processing message {}".format(header.id))
+            rospy.loginfo("processing message {}".format(header.id))
             if header.id not in handlers:
                 rospy.loginfo("skip unexpected novatel message {}".format(header.id))
                 continue

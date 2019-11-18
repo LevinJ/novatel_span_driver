@@ -34,5 +34,6 @@ msgs = {
     264: ("inscov", INSCOV),
     812: ("corrimudata", CORRIMUDATA),
     1465: ("inspvax", INSPVAX),
-    1429: ("bestgnsspos", BESTPOS)
+    1429: ("bestgnsspos", BESTPOS),
+    268: ("rawimudata", RAWIMUDATA)
 }
