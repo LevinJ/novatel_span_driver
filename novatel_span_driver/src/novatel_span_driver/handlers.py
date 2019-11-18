@@ -39,7 +39,7 @@ class Handler:
 
 class MessageHandler(Handler):
     def __init__(self, name, data_class):
-        self.publisher = rospy.Publisher("novatel_data/" + name, data_class, queue_size=1)
+        self.publisher = rospy.Publisher("novatel_data/" + name, data_class, queue_size=1000)
         self.message = self.publisher.data_class()
 
     def handle(self, buff, header):

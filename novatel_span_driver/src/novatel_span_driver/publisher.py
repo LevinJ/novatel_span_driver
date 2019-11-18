@@ -107,13 +107,13 @@ class NovatelPublisher(object):
 
         # Topic publishers
         self.pub_rawimu = rospy.Publisher('imu/raw_data', Imu, queue_size=1000)
-        self.pub_imu = rospy.Publisher('imu/data', Imu, queue_size=1)
-        self.pub_odom = rospy.Publisher('navsat/odom', Odometry, queue_size=1)
-        self.pub_origin = rospy.Publisher('navsat/origin', Pose, queue_size=1, latch=True)
-        self.pub_navsatfix = rospy.Publisher('navsat/fix', NavSatFix, queue_size=1)
-        self.pub_navsatfix_nonspan = rospy.Publisher('navsat/fix_nonspan', NavSatFix, queue_size=1)
-        self.pub_odom_bestpos = rospy.Publisher('navsat/odom_bestpos', Odometry, queue_size=1)
-        self.pub_odom_bestgnsspos = rospy.Publisher('navsat/odom_bestgnsspos', Odometry, queue_size=1)
+        self.pub_imu = rospy.Publisher('imu/data', Imu, queue_size=1000)
+        self.pub_odom = rospy.Publisher('navsat/odom', Odometry, queue_size=1000)
+        self.pub_origin = rospy.Publisher('navsat/origin', Pose, queue_size=1000, latch=True)
+        self.pub_navsatfix = rospy.Publisher('navsat/fix', NavSatFix, queue_size=1000)
+        self.pub_navsatfix_nonspan = rospy.Publisher('navsat/fix_nonspan', NavSatFix, queue_size=1000)
+        self.pub_odom_bestpos = rospy.Publisher('navsat/odom_bestpos', Odometry, queue_size=1000)
+        self.pub_odom_bestgnsspos = rospy.Publisher('navsat/odom_bestgnsspos', Odometry, queue_size=1000)
 
         if self.publish_tf:
             self.tf_broadcast = tf.TransformBroadcaster()
@@ -130,11 +130,11 @@ class NovatelPublisher(object):
         self.orientation_covariance = IMU_ORIENT_COVAR
 
         # Subscribed topics
-        rospy.Subscriber('novatel_data/bestpos', BESTPOS, self.bestpos_handler)
-        rospy.Subscriber('novatel_data/bestgnsspos', BESTPOS, self.bestgnsspos_handler)
+        rospy.Subscriber('novatel_data/bestpos', BESTPOS, self.bestpos_handler, queue_size=2000)
+        rospy.Subscriber('novatel_data/bestgnsspos', BESTPOS, self.bestgnsspos_handler, queue_size=2000)
         rospy.Subscriber('novatel_data/corrimudata', CORRIMUDATA, self.corrimudata_handler, queue_size=2000)
-        rospy.Subscriber('novatel_data/inscov', INSCOV, self.inscov_handler)
-        rospy.Subscriber('novatel_data/inspvax', INSPVAX, self.inspvax_handler)
+        rospy.Subscriber('novatel_data/inscov', INSCOV, self.inscov_handler, queue_size=2000)
+        rospy.Subscriber('novatel_data/inspvax', INSPVAX, self.inspvax_handler, queue_size=2000)
         rospy.Subscriber('novatel_data/rawimudata', RAWIMUDATA, self.rawimudata_handler, queue_size=2000)
     
     
@@ -147,7 +147,7 @@ class NovatelPublisher(object):
             # Probably coordinates out of range for UTM conversion.
             return
         odom = Odometry()
-        odom.header.stamp = rospy.Time.now()
+        odom.header.stamp = navsat.header.stamp
         odom.header.frame_id = self.odom_frame
         odom.child_frame_id = self.base_frame
         odom.pose.pose.position.x = utm_pos.easting - origin.x
@@ -156,10 +156,11 @@ class NovatelPublisher(object):
         
         return odom
     
-    def process_bestpos(self, bestpos):
+    def process_bestpos(self, bestpos, msgname = "bestpos"):
         navsat = NavSatFix()
         # TODO: The timestamp here should come from SPAN, not the ROS system time.
-        navsat.header.stamp = rospy.Time.now()
+        gps_stamp = {'gps_week': bestpos.header.gps_week, 'gps_week_seconds': bestpos.header.gps_week_seconds}
+        navsat.header.stamp =  g_CalibrateTime.get_time(msgname, gps_stamp)
         navsat.header.frame_id = "antenna"
         navsat.header.seq = bestpos.header.sequence
 
@@ -230,7 +231,7 @@ class NovatelPublisher(object):
     
     def bestgnsspos_handler(self, bestpos):
         utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)
-        navsat = self.process_bestpos(bestpos)
+        navsat = self.process_bestpos(bestpos, msgname = "bestgnsspos")
 #         rospy.logwarn("bestgnsspos utm_pos {}, altitude={}".format(utm_pos, navsat.altitude)) 
         # Ship it
         self.pub_navsatfix_nonspan.publish(navsat)
@@ -240,7 +241,7 @@ class NovatelPublisher(object):
 
     def bestpos_handler(self, bestpos): 
         utm_pos = geodesy.utm.fromLatLong(bestpos.latitude, bestpos.longitude)   
-        navsat = self.process_bestpos(bestpos)
+        navsat = self.process_bestpos(bestpos, msgname = "bestpos")
 #         rospy.logwarn("bestpos utm_pos {}, altitude={}".format(utm_pos, navsat.altitude)) 
         # Ship it
         self.pub_navsatfix.publish(navsat)
@@ -265,7 +266,8 @@ class NovatelPublisher(object):
             self.pub_origin.publish(position=self.origin)
 
         odom = Odometry()
-        odom.header.stamp = rospy.Time.now()
+        gps_stamp = {'gps_week': inspvax.header.gps_week, 'gps_week_seconds': inspvax.header.gps_week_seconds}
+        odom.header.stamp = g_CalibrateTime.get_time("inspvax", gps_stamp)
         odom.header.frame_id = self.odom_frame
         odom.child_frame_id = self.base_frame
         odom.pose.pose.position.x = utm_pos.easting - self.origin.x
