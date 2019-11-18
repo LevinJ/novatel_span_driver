@@ -43,45 +43,33 @@ class DataPort(Port):
         # Set up handlers for translating different novatel messages as they arrive.
         handlers = {}
         pkt_counters = {}
-        pkt_times = {}
 
         for msg_id in msgs.keys():
             handlers[msg_id] = MessageHandler(*msgs[msg_id])
             pkt_counters[msg_id] = 0
-            pkt_times[msg_id] = 0
 
         bad_pkts = set()
         pkt_id = None
 
         while not self.finish.is_set():
-            try:
-                header, pkt_str = self.recv()
+            
+            header, pkt_str = self.recv()
 #                 continue
-                if header is not None:
-                    if header.id not in handlers:
-                        continue
-#                     rospy.loginfo("processing message {}".format(header.id))
-                    if header.id not in pkt_counters:
-                        pkt_counters[header.id] = 0
-                    else:
-                        pkt_counters[header.id] += 1
-                    header.sequence = pkt_counters[header.id]
-                    handlers[header.id].handle(StringIO(pkt_str), header)
-
-            except ValueError as e:
-                # Some problem in the recv() routine.
-                rospy.logwarn(str(e))
+            if header is None:
                 continue
+            
+#             rospy.loginfo("processing message {}".format(header.id))
+            if header.id not in handlers:
+                rospy.loginfo("skip unexpected novatel message {}".format(header.id))
+                continue
+                
+            if pkt_counters[header.id] >= 65535:
+                pkt_counters[header.id] = 0
+            pkt_counters[header.id] += 1
+            header.sequence = pkt_counters[header.id]
+            
+            handlers[header.id].handle(StringIO(pkt_str), header)
 
-            except KeyError as e:
-                if header.id not in handlers:
-#                     pass
-                    rospy.logwarn("No handler for message id %d" % header.id)
-
-            except translator.TranslatorError as e:
-                rospy.logwarn("Error parsing %s.%d" % header.id)
-                bad_pkts.add(pkt)
-            except Exception as e:
-                rospy.logwarn(str(e))
+            
                     
             

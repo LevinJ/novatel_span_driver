@@ -61,39 +61,45 @@ class Port(threading.Thread):
         header = msg.CommonHeader()
         footer = msg.CommonFooter()
 
-        try:
-            bytes_before_sync = []
-            while True:
-                sync = self.sock.recv(1)
-                if sync == "\xAA":
-                    bytes_before_sync = ''.join(bytes_before_sync)
-                    if len(bytes_before_sync) > 0 and not bytes_before_sync.startswith("\r\n<OK"):
-                        rospy.logwarn(("Discarded %d bytes between end of previous message " +
-                                      "and next sync byte.") % len(bytes_before_sync))
-                        rospy.logwarn("Discarded: %s" % repr(bytes_before_sync))
-                    break
-                bytes_before_sync.append(sync)
-
+        #get sync 1
+        bytes_before_sync = []
+        while True:
             sync = self.sock.recv(1)
-            if sync != "\x44":
-                raise ValueError("Bad sync2 byte, expected 0x44, received 0x%x" % ord(sync[0]))
-            sync = self.sock.recv(1)
-            if sync != "\x12":
-                raise ValueError("Bad sync3 byte, expected 0x12, received 0x%x" % ord(sync[0]))
+            if sync == "\xAA":
+                bytes_before_sync = ''.join(bytes_before_sync)
+                if len(bytes_before_sync) > 0 and not bytes_before_sync.startswith("\r\n<OK"):
+                    rospy.logwarn(("Discarded %d bytes between end of previous message " +
+                                  "and next sync byte.") % len(bytes_before_sync))
+#                         rospy.logwarn("Discarded: %s" % repr(bytes_before_sync))
+                break
+            bytes_before_sync.append(sync)
 
-            # Four byte offset to account for 3 sync bytes and one header length byte already consumed.
-            header_length = ord(self.sock.recv(1)[0]) - 4
-            if header_length != header.translator().size:
-                raise ValueError("Bad header length. Expected %d, got %d" %
-                                 (header.translator().size, header_length))
-
-        except socket.timeout:
+        #get sync 2
+        sync = self.sock.recv(1)
+        if sync != "\x44":
+            rospy.logwarn("Bad sync2 byte, expected 0x44, received 0x%x" % ord(sync[0]))
+            return None, None
+        #get sync 3
+        sync = self.sock.recv(1)
+        if sync != "\x12":
+            rospy.logwarn("Bad sync3 byte, expected 0x12, received 0x%x" % ord(sync[0]))
             return None, None
 
+        #get header length
+        # Four byte offset to account for 3 sync bytes and one header length byte already consumed.
+        header_length = ord(self.sock.recv(1)[0]) - 4
+        if header_length != header.translator().size:
+            rospy.logwarn("Bad header length. Expected %d, got %d" %
+                             (header.translator().size, header_length))
+            return None, None
+
+        
+        #get header
         header_str = self.sock.recv(header_length)
         header_data = StringIO(header_str)
         header.translator().deserialize(header_data)
 
+        #get body and footer
         packet_str = self.sock.recv(header.length)
         footer_data = StringIO(self.sock.recv(footer.translator().size))
 
