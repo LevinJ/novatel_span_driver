@@ -44,6 +44,7 @@ class CalibrateTime(object):
         self.week_secs = 1 * 7 * 24 * 60 * 60
         return
     def get_time(self, msg_name, gps_stamp):
+        msg_name = "novetal"
         if not msg_name in self.first_time_match:
             self.first_time_match[msg_name] = (gps_stamp, rospy.Time.now())
             

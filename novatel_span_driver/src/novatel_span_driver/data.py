@@ -36,6 +36,7 @@ import translator
 
 from cStringIO import StringIO
 from threading import Lock
+from publisher import g_CalibrateTime
 
 
 class DataPort(Port):
@@ -50,6 +51,7 @@ class DataPort(Port):
 
         bad_pkts = set()
         pkt_id = None
+        init_timestamp = True
 
         while not self.finish.is_set():
             
@@ -59,6 +61,12 @@ class DataPort(Port):
                 continue
             
             rospy.loginfo("processing message {}".format(header.id))
+            #initialize the timestamp gap between novatel device and main board
+            if init_timestamp:
+                gps_stamp = {'gps_week': header.gps_week, 'gps_week_seconds': header.gps_week_seconds}
+                g_CalibrateTime.get_time("novatel", gps_stamp)
+                init_timestamp = False
+                
             if header.id not in handlers:
                 rospy.loginfo("skip unexpected novatel message {}".format(header.id))
                 continue
