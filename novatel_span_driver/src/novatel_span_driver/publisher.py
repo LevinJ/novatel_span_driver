@@ -95,6 +95,7 @@ class NovatelPublisher(object):
         and repackages the resultant data as standard ROS messages. """
 
     def __init__(self):
+        
         # Parameters
         self.publish_tf = rospy.get_param('~publish_tf', False)
         self.odom_frame = rospy.get_param('~odom_frame', 'odom_combined')
@@ -105,6 +106,9 @@ class NovatelPublisher(object):
         self.zero_start = rospy.get_param('~zero_start', False)
 
         self.imu_rate = rospy.get_param('~rate', 100)
+        
+        self.gryo_scale = 720.0/(2 **31)
+        self.accel_scale = 200.0/(2 ** 31) * self.imu_rate
 
         # Topic publishers
         self.pub_rawimu = rospy.Publisher('imu/raw_data', Imu, queue_size=1000)
@@ -354,21 +358,21 @@ class NovatelPublisher(object):
 
         # Angular rates (rad/s)
         # rawimudata log provides instantaneous rates so multiply by IMU rate in Hz
-        gryo_scale = 720.0/2^31
-        imu.angular_velocity.x = rawimudata.x_rate * gryo_scale
-        imu.angular_velocity.y = -rawimudata.y_rate * gryo_scale
-        imu.angular_velocity.z = rawimudata.z_rate * gryo_scale
+        
+        imu.angular_velocity.x = rawimudata.x_rate * self.gryo_scale
+        imu.angular_velocity.y = -rawimudata.y_rate * self.gryo_scale
+        imu.angular_velocity.z = rawimudata.z_rate * self.gryo_scale
         imu.angular_velocity_covariance = IMU_VEL_COVAR
 
         # Linear acceleration (m/s^2)
 #         self.imu_rate
-        accel_scale = 200.0/2^31 * self.imu_rate
-        imu.linear_acceleration.x = rawimudata.x_accel * accel_scale
-        imu.linear_acceleration.y = -rawimudata.y_accel * accel_scale
-        imu.linear_acceleration.z = rawimudata.z_accel * accel_scale
+        
+        imu.linear_acceleration.x = rawimudata.x_accel * self.accel_scale
+        imu.linear_acceleration.y = -rawimudata.y_accel * self.accel_scale
+        imu.linear_acceleration.z = rawimudata.z_accel * self.accel_scale
         imu.linear_acceleration_covariance = IMU_ACCEL_COVAR
 
-        self.pub_imu.publish(imu)
+        self.pub_rawimu.publish(imu)
 
     def inscov_handler(self, inscov):
         # TODO: Supply this data in the IMU and Odometry messages.
