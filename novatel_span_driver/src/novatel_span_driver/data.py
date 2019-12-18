@@ -56,7 +56,7 @@ class DataPort(Port):
         while not self.finish.is_set():
             
             header, pkt_str = self.recv()
-#                 continue
+#             continue
             if header is None:
                 continue
             
