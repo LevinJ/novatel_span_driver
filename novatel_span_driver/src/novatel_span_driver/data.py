@@ -37,6 +37,7 @@ import translator
 from cStringIO import StringIO
 from threading import Lock
 from publisher import g_CalibrateTime
+import traceback
 
 
 class DataPort(Port):
@@ -55,29 +56,31 @@ class DataPort(Port):
 
         while not self.finish.is_set():
             
-            header, pkt_str = self.recv()
-#             continue
-            if header is None:
-                continue
-            
-            rospy.loginfo("processing message {}".format(header.id))
-            #initialize the timestamp gap between novatel device and main board
-            if init_timestamp:
-                gps_stamp = {'gps_week': header.gps_week, 'gps_week_seconds': header.gps_week_seconds}
-                g_CalibrateTime.get_time("novatel", gps_stamp)
-                init_timestamp = False
+            try:
+                header, pkt_str = self.recv()
+    #             continue
+                if header is None:
+                    continue
                 
-            if header.id not in handlers:
-                rospy.loginfo("skip unexpected novatel message {}".format(header.id))
-                continue
+                rospy.loginfo("processing message {}".format(header.id))
+                #initialize the timestamp gap between novatel device and main board
+                if init_timestamp:
+                    gps_stamp = {'gps_week': header.gps_week, 'gps_week_seconds': header.gps_week_seconds}
+                    g_CalibrateTime.get_time("novatel", gps_stamp)
+                    init_timestamp = False
+                    
+                if header.id not in handlers:
+                    rospy.loginfo("skip unexpected novatel message {}".format(header.id))
+                    continue
+                    
+                if pkt_counters[header.id] >= 65535:
+                    pkt_counters[header.id] = 0
+                pkt_counters[header.id] += 1
+                header.sequence = pkt_counters[header.id]
                 
-            if pkt_counters[header.id] >= 65535:
-                pkt_counters[header.id] = 0
-            pkt_counters[header.id] += 1
-            header.sequence = pkt_counters[header.id]
-            
-            handlers[header.id].handle(StringIO(pkt_str), header)
+                handlers[header.id].handle(StringIO(pkt_str), header)
 
-            
+            except Exception as e:
+                rospy.loginfo(traceback.format_exc())
                     
             
