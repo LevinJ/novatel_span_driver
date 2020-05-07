@@ -1,10 +1,10 @@
 <launch>
   <arg name="ip" default="192.168.8.51" />
   <arg name="port" default="3002" />
-  <arg name="viz" default="true"/>
+  <arg name="viz" default="false"/>
   <arg name="rec" default="true"/>
    <node pkg="rosbag" type="record" name="rosbag_record_cam"
-       args="record -a -o /home/aiways/bagfiles/novatel/"
+       args="record -a -o /home/dev/levin/bagfiles/"
        if="$(arg rec)" />
 
   <node name="novatel_span_driver" pkg="novatel_span_driver" type="driver">
@@ -12,7 +12,7 @@
     <param name="port" value="$(arg port)" />
     <rosparam ns="configuration">
       log_request:
-        #inspvaxb: 0.01
+        inspvaxb: 0.01
         bestposb: 0.1
         bestgnssposb: 0.1
         #corrimudatab: 0.01
@@ -35,7 +35,7 @@
     <!-- Whether or not the driver should publish a TF, and what frames it should
          be between. This configuration publishes odom -> base_link. -->
     <param name="publish_tf" value="false" />
-    <param name="odom_frame" value="map" />
+    <param name="odom_frame" value="odom" />
     <param name="base_frame" value="base_link" />
 
     <!-- IMU rate; controls scaling of the imu/data topic values. This is a
@@ -50,6 +50,7 @@
          rather than starting from an arbitrary zero origin. -->
     <param name="zero_start" value="true" />
   </node>
+   <node pkg="zk_cam" type="zk_cam_node" name="zk_cam_node"/>
   <node pkg="tf2_ros" type="static_transform_publisher" name="static_tf_fake" args="0 0 0 0 0 0 map antenna" />
   <node pkg="rviz" type="rviz" name="novatel_span_driver_rviz" args="-d $(find novatel_span_driver)/rviz/demo.rviz"  if="$(arg viz)"/>
 </launch>
